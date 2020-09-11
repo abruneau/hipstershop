@@ -213,3 +213,7 @@ If you've deployed the application with `skaffold run` command, you can run
 If you've deployed the application with `kubectl apply -f [...]`, you can
 run `kubectl delete -f [...]` with the same argument to clean up the deployed
 resources.
+
+## Credits
+
+This repository is based on [Google microservice demo](https://github.com/GoogleCloudPlatform/microservices-demo) 
