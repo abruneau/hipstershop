@@ -1,0 +1,13 @@
+bin/
+pkg/
+.DS_Store
+*.pyc
+*.swp
+*~
+.vscode/
+.vs/
+.idea
+.skaffold-*.yaml
+.kubernetes-manifests-*/
+.project
+.eclipse.buildship.core.prefs

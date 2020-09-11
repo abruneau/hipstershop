@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+  <Appenders>
+    <Console name="STDOUT" target="SYSTEM_OUT">
+      <JSONLayout compact="true" eventEol="true" properties="true" stacktraceAsString="true"/>
+
+    </Console>
+  </Appenders>
+  <Loggers>
+    <Logger name="io.grpc.netty" level="INFO"/>
+    <Logger name="io.netty" level="INFO"/>
+    <Logger name="sun.net" level="INFO"/>
+    <Root level="TRACE">
+      <AppenderRef ref="STDOUT"/>
+    </Root>
+  </Loggers>
+</Configuration>
