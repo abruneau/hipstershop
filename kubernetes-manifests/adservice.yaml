@@ -10,6 +10,11 @@ spec:
     metadata:
       labels:
         app: adservice
+        tags.datadoghq.com/env: "prod"
+        tags.datadoghq.com/service: "adservice"
+        tags.datadoghq.com/version: "1.0"
+      annotations:
+        ad.datadoghq.com/server.logs: '[{"source":"java","service":"adservice", "sourcecategory":"sourcecode"}]'
     spec:
       terminationGracePeriodSeconds: 5
       containers:
@@ -20,6 +25,28 @@ spec:
         env:
         - name: PORT
           value: "9555"
+        - name: DD_AGENT_HOST
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: DD_ENV
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['tags.datadoghq.com/env']
+        - name: DD_SERVICE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['tags.datadoghq.com/service']
+        - name: DD_VERSION
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['tags.datadoghq.com/version']
+        - name: DD_PROFILING_ENABLED
+          value: "true"
+        - name: DD_LOGS_INJECTION
+          value: "true"
+        - name: DD_TRACE_ANALYTICS_ENABLED
+          value: "true"
         resources:
           requests:
             cpu: 200m

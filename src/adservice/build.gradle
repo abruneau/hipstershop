@@ -91,7 +91,7 @@ task adService(type: CreateStartScripts) {
     outputDir = new File(project.buildDir, 'tmp')
     classpath = startScripts.classpath
     defaultJvmOpts =
-            []
+            ["-javaagent:/opt/datadog/dd-java-agent.jar"]
 }
 
 task adServiceClient(type: CreateStartScripts) {
