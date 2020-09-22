@@ -37,6 +37,14 @@ deploy:
   kubectl:
     manifests:
     - ./kubernetes-manifests/*.yaml
+  helm:
+    releases:
+      - name: datadog-agent
+        chartPath: datadog/datadog
+        valuesFiles: 
+        - helm/values.yaml
+        skipBuildDependencies: true
+        remote: true
 
 profiles:
 
