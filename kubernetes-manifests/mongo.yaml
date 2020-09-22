@@ -32,6 +32,23 @@ spec:
     metadata:
       labels:
         app: mongo
+      annotations:
+        ad.datadoghq.com/mongo.logs: '[{"source": "mongodb", "service": "mongo"}]'
+        ad.datadoghq.com/mongo.check_names: '["mongo"]'
+        ad.datadoghq.com/mongo.init_configs: '[{}]'
+        ad.datadoghq.com/mongo.instances: |
+          [
+            {
+              "server": "mongodb://datadog:ddpass@%%host%%:27017/admin",
+              "additional_metrics":
+                [
+                  "collection",
+                  "metrics.commands",
+                  "tcmalloc",
+                  "top"
+                ]
+            }
+          ]
     spec:
       containers:
         - name: mongo
@@ -41,6 +58,14 @@ spec:
           volumeMounts:
             - name: storage
               mountPath: /data/db
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                - sh
+                - -c
+                # sleep is for Azure
+                - "sleep 30; mongo --eval 'db = db.getSiblingDB(\"admin\"); db.createUser({ \"user\": \"datadog\", \"pwd\": \"ddpass\", \"roles\": [{role: \"read\", db: \"admin\"},{role: \"clusterMonitor\", db: \"admin\"},{role: \"read\", db: \"local\"}, {role: \"read\", db: \"store\"}]});'"
           readinessProbe:
             exec:
               command:
