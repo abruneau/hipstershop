@@ -3,6 +3,7 @@ MongoDB
 
 To collect Mondo metrics and logs, we need to create a read-only user for the Datadog Agent in the admin database. To achieve it, we can run a shell script when the container starts.
 
+##### **`kubernetes-manifests/mongo.yaml`**
 ```yaml
 lifecycle:
     postStart:
@@ -16,6 +17,7 @@ lifecycle:
 
 Finally, we need to annotate the pod for the Datadog agent to pick it up.
 
+##### **`kubernetes-manifests/mongo.yaml`**
 ```yaml
 annotations:
     ad.datadoghq.com/mongo.logs: '[{"source": "mongodb", "service": "mongo"}]'
