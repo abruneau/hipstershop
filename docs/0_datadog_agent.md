@@ -48,7 +48,7 @@ datadog:
 
 ## Logs
 
-To collect logs, you will need to set `logs.enabled` to `true`. If you want to monitor your entire cluster, you can leave `logs.containerCollectAll` to true. But if you work pods after pods, you can set it to `false` to only collect logs from the containers you enabled. 
+To collect logs, you will need to set `logs.enabled` to `true`. If you want to monitor your entire cluster, you can leave `logs.containerCollectAll` to true. But if you work pods after pods, you can set it to `false` to only collect logs from the containers you enabled. I also recommend to read logs from files, as it seems to be more stable across k8s distributions: `logs.containerCollectUsingFiles: true`
 
 ## APM
 

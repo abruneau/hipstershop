@@ -235,7 +235,7 @@ datadog:
     ## It's usually the most efficient way of collecting logs.
     ## ref: https://docs.datadoghq.com/agent/basic_agent_usage/kubernetes/#log-collection-setup
     #
-    containerCollectUsingFiles: false
+    containerCollectUsingFiles: true
 
   ## @param apm - object - required
   ## Enable apm agent and provide custom configs
