@@ -9,6 +9,8 @@ using Grpc.Core;
 using Grpc.Core.Interceptors;
 using Microsoft.Extensions.Configuration;
 using NLog;
+// using OpenTracing.Contrib.Grpc.Interceptors;
+// using Datadog.Trace.OpenTracing;
 
 namespace cartservice
 {
@@ -44,13 +46,17 @@ namespace cartservice
                     await cartStore.InitializeAsync();
 
                     logger.Debug($"Trying to start a grpc server at  {host}:{port}");
+
+                    // // Create an OpenTracing ITracer with the default setting
+                    // OpenTracing.ITracer tracer = OpenTracingTracerFactory.CreateTracer();
+                    // ServerTracingInterceptor tracingInterceptor = new ServerTracingInterceptor(tracer);
                     Server server = new Server
                     {
                         Services =
                         {
                             // Cart Service Endpoint
-                             Hipstershop.CartService.BindService(new CartServiceImpl(cartStore)),
-
+                             Hipstershop.CartService.BindService(new CartServiceImpl(cartStore)).Intercept(new cartservice.grpc_interceptor.DatadogInterceptor()),
+                            //  Hipstershop.CartService.BindService(new CartServiceImpl(cartStore)).Intercept(tracingInterceptor),
                              // Health Endpoint
                              Grpc.Health.V1.Health.BindService(new HealthImpl(cartStore))
                         },

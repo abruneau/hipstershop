@@ -10,6 +10,8 @@ spec:
     metadata:
       labels:
         app: cartservice
+      annotations:
+        ad.datadoghq.com/server.logs: '[{"source":"csharp","service":"cartservice", "sourcecategory":"sourcecode", "file":"file"}]'
     spec:
       terminationGracePeriodSeconds: 5
       containers:
@@ -24,6 +26,34 @@ spec:
           value: "7070"
         - name: LISTEN_ADDR
           value: "0.0.0.0"
+        - name: DD_AGENT_HOST
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: DD_TRACE_AGENT_PORT
+          value: "8126"
+        - name: CORECLR_ENABLE_PROFILING
+          value: "1"
+        - name: CORECLR_PROFILER
+          value: "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
+        - name: CORECLR_PROFILER_PATH
+          value: "/opt/datadog/Datadog.Trace.ClrProfiler.Native.so"
+        - name: DD_INTEGRATIONS
+          value: "/opt/datadog/integrations.json"
+        - name: DD_DOTNET_TRACER_HOME
+          value: "/opt/datadog"
+        - name: DD_LOGS_INJECTION
+          value: "true"
+        - name: DD_ENV
+          value: "prod"
+        - name: DD_SERVICE
+          value: "cartservice"
+        - name: DD_VERSION
+          value: "1.0.0"
+        - name: DD_TRACE_ENABLED
+          value: "true"
+        - name: DD_TRACE_DEBUG
+          value: "false"
         resources:
           requests:
             cpu: 200m
