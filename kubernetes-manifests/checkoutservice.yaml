@@ -10,6 +10,8 @@ spec:
     metadata:
       labels:
         app: checkoutservice
+      annotations:
+        ad.datadoghq.com/server.logs: '[{"source":"go","service":"checkoutservice", "sourcecategory":"sourcecode", "file":"file"}]'
     spec:
       containers:
         - name: server
@@ -37,6 +39,18 @@ spec:
             value: "currencyservice:7000"
           - name: CART_SERVICE_ADDR
             value: "cartservice:7070"
+          - name: DD_AGENT_HOST
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+          - name: DD_ENV
+            value: "prod"
+          - name: DD_SERVICE
+            value: "checkoutservice"
+          - name: DD_VERSION
+            value: "1.0.0"
+          - name: DD_TRACE_ANALYTICS_ENABLED
+            value: "true"
           resources:
             requests:
               cpu: 100m

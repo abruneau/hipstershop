@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace"
 )
 
 // StandardLogger enforces specific log message formats
@@ -27,4 +28,12 @@ func NewLogger() *StandardLogger {
 	}
 
 	return standardLogger
+}
+
+// WithSpan adds span infromation to your log
+func (l *StandardLogger) WithSpan(span ddtrace.Span) *logrus.Entry {
+	return l.WithFields(logrus.Fields{
+		"dd.trace_id": span.Context().TraceID(),
+		"dd.span_id":  span.Context().SpanID(),
+	})
 }

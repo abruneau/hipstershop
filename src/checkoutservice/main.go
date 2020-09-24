@@ -11,10 +11,14 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
+	"gopkg.in/DataDog/dd-trace-go.v1/profiler"
 
 	pb "github.com/abruneau/hipstershop/src/checkoutservice/genproto"
 	money "github.com/abruneau/hipstershop/src/checkoutservice/money"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
+
+	grpctrace "gopkg.in/DataDog/dd-trace-go.v1/contrib/google.golang.org/grpc"
 )
 
 const (
@@ -42,10 +46,19 @@ type checkoutService struct {
 }
 
 func main() {
+	tracer.Start()
+	defer tracer.Stop()
+
 	port := listenPort
 	if os.Getenv("PORT") != "" {
 		port = os.Getenv("PORT")
 	}
+
+	err := profiler.Start()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer profiler.Stop()
 
 	svc := new(checkoutService)
 	mustMapEnv(&svc.shippingSvcAddr, "SHIPPING_SERVICE_ADDR")
@@ -55,6 +68,13 @@ func main() {
 	mustMapEnv(&svc.emailSvcAddr, "EMAIL_SERVICE_ADDR")
 	mustMapEnv(&svc.paymentSvcAddr, "PAYMENT_SERVICE_ADDR")
 
+	svc.si = grpctrace.StreamClientInterceptor(grpctrace.WithServiceName(serviceName))
+	svc.ui = grpctrace.UnaryClientInterceptor(grpctrace.WithServiceName(serviceName))
+
+	// Create the server interceptor using the grpc trace package.
+	ssi := grpctrace.StreamServerInterceptor(grpctrace.WithServiceName(serviceName))
+	usi := grpctrace.UnaryServerInterceptor(grpctrace.WithServiceName(serviceName))
+
 	log.Infof("service config: %+v", svc)
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
@@ -63,7 +83,7 @@ func main() {
 	}
 
 	var srv *grpc.Server
-	srv = grpc.NewServer()
+	srv = grpc.NewServer(grpc.StreamInterceptor(ssi), grpc.UnaryInterceptor(usi))
 	pb.RegisterCheckoutServiceServer(srv, svc)
 	healthpb.RegisterHealthServer(srv, svc)
 	log.Infof("starting to listen on tcp: %q", lis.Addr().String())
@@ -88,7 +108,8 @@ func (cs *checkoutService) Watch(req *healthpb.HealthCheckRequest, ws healthpb.H
 }
 
 func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderRequest) (*pb.PlaceOrderResponse, error) {
-	log.Infof("[PlaceOrder] user_id=%q user_currency=%q", req.UserId, req.UserCurrency)
+	span, _ := tracer.SpanFromContext(ctx)
+	log.WithSpan(span).Infof("[PlaceOrder] user_id=%q user_currency=%q", req.UserId, req.UserCurrency)
 
 	orderID, err := uuid.NewUUID()
 	if err != nil {
@@ -112,7 +133,7 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to charge card: %+v", err)
 	}
-	log.Infof("payment went through (transaction_id: %s)", txID)
+	log.WithSpan(span).Infof("payment went through (transaction_id: %s)", txID)
 
 	shippingTrackingID, err := cs.shipOrder(ctx, req.Address, prep.cartItems)
 	if err != nil {
@@ -130,9 +151,9 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 	}
 
 	if err := cs.sendOrderConfirmation(ctx, req.Email, orderResult); err != nil {
-		log.Warnf("failed to send order confirmation to %q: %+v", req.Email, err)
+		log.WithSpan(span).Warnf("failed to send order confirmation to %q: %+v", req.Email, err)
 	} else {
-		log.Infof("order confirmation email sent to %q", req.Email)
+		log.WithSpan(span).Infof("order confirmation email sent to %q", req.Email)
 	}
 	resp := &pb.PlaceOrderResponse{Order: orderResult}
 	return resp, nil
