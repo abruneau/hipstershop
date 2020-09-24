@@ -19,7 +19,7 @@ RUN GRPC_HEALTH_PROBE_VERSION=v0.3.2 && \
     chmod +x /bin/grpc_health_probe
 
 RUN mkdir -p /opt/datadog && \
-    wget -qO- https://github.com/DataDog/dd-trace-dotnet/releases/download/v1.18.0/datadog-dotnet-apm-1.18.0-musl.tar.gz \
+    wget -qO- https://github.com/DataDog/dd-trace-dotnet/releases/download/v1.19.3/datadog-dotnet-apm-1.19.3-musl.tar.gz \
     | tar xzf - -C /opt/datadog
 
 RUN echo 'http://dl-cdn.alpinelinux.org/alpine/v3.8/main' >> /etc/apk/repositories && \
