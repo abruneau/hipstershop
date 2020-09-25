@@ -152,3 +152,21 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 
 }
 ```
+
+Next we need to add a few environment variables to the deployment
+
+##### **`kubernetes-manifests/checkoutservice.yaml`**
+```yaml
+- name: DD_AGENT_HOST
+valueFrom:
+    fieldRef:
+    fieldPath: status.hostIP
+- name: DD_ENV
+value: "prod"
+- name: DD_SERVICE
+value: "checkoutservice"
+- name: DD_VERSION
+value: "1.0.0"
+- name: DD_TRACE_ANALYTICS_ENABLED
+value: "true"
+```
