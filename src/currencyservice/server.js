@@ -1,3 +1,4 @@
+const tracer = require('dd-trace').init()
 const path = require('path');
 const grpc = require('grpc');
 const pino = require('pino');
@@ -13,6 +14,7 @@ const healthProto = _loadProto(HEALTH_PROTO_PATH).grpc.health.v1;
 
 const logger = pino({
   name: 'currencyservice-server',
+  base: null,
   messageKey: 'message',
   changeLevelName: 'severity',
   useLevelLabels: true
