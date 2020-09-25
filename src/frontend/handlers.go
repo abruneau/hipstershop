@@ -14,6 +14,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 
 	pb "github.com/abruneau/hipstershop/src/frontend/genproto"
 	"github.com/abruneau/hipstershop/src/frontend/money"
@@ -33,7 +34,11 @@ var (
 )
 
 func (fe *frontendServer) homeHandler(w http.ResponseWriter, r *http.Request) {
-	log := r.Context().Value(ctxKeyLog{}).(logrus.FieldLogger)
+	span, _ := tracer.SpanFromContext(r.Context())
+	log := r.Context().Value(ctxKeyLog{}).(logrus.FieldLogger).WithFields(logrus.Fields{
+		"dd.trace_id": span.Context().TraceID(),
+		"dd.span_id":  span.Context().SpanID(),
+	})
 	log.WithField("currency", currentCurrency(r)).Info("home")
 	currencies, err := fe.getCurrencies(r.Context())
 	if err != nil {
@@ -104,7 +109,11 @@ func (plat *platformDetails) setPlatformDetails(env string) {
 }
 
 func (fe *frontendServer) productHandler(w http.ResponseWriter, r *http.Request) {
-	log := r.Context().Value(ctxKeyLog{}).(logrus.FieldLogger)
+	span, _ := tracer.SpanFromContext(r.Context())
+	log := r.Context().Value(ctxKeyLog{}).(logrus.FieldLogger).WithFields(logrus.Fields{
+		"dd.trace_id": span.Context().TraceID(),
+		"dd.span_id":  span.Context().SpanID(),
+	})
 	id := mux.Vars(r)["id"]
 	if id == "" {
 		renderHTTPError(log, r, w, errors.New("product id not specified"), http.StatusBadRequest)
@@ -165,7 +174,11 @@ func (fe *frontendServer) productHandler(w http.ResponseWriter, r *http.Request)
 }
 
 func (fe *frontendServer) addToCartHandler(w http.ResponseWriter, r *http.Request) {
-	log := r.Context().Value(ctxKeyLog{}).(logrus.FieldLogger)
+	span, _ := tracer.SpanFromContext(r.Context())
+	log := r.Context().Value(ctxKeyLog{}).(logrus.FieldLogger).WithFields(logrus.Fields{
+		"dd.trace_id": span.Context().TraceID(),
+		"dd.span_id":  span.Context().SpanID(),
+	})
 	quantity, _ := strconv.ParseUint(r.FormValue("quantity"), 10, 32)
 	productID := r.FormValue("product_id")
 	if productID == "" || quantity == 0 {
@@ -189,7 +202,11 @@ func (fe *frontendServer) addToCartHandler(w http.ResponseWriter, r *http.Reques
 }
 
 func (fe *frontendServer) emptyCartHandler(w http.ResponseWriter, r *http.Request) {
-	log := r.Context().Value(ctxKeyLog{}).(logrus.FieldLogger)
+	span, _ := tracer.SpanFromContext(r.Context())
+	log := r.Context().Value(ctxKeyLog{}).(logrus.FieldLogger).WithFields(logrus.Fields{
+		"dd.trace_id": span.Context().TraceID(),
+		"dd.span_id":  span.Context().SpanID(),
+	})
 	log.Debug("emptying cart")
 
 	if err := fe.emptyCart(r.Context(), sessionID(r)); err != nil {
@@ -201,7 +218,11 @@ func (fe *frontendServer) emptyCartHandler(w http.ResponseWriter, r *http.Reques
 }
 
 func (fe *frontendServer) viewCartHandler(w http.ResponseWriter, r *http.Request) {
-	log := r.Context().Value(ctxKeyLog{}).(logrus.FieldLogger)
+	span, _ := tracer.SpanFromContext(r.Context())
+	log := r.Context().Value(ctxKeyLog{}).(logrus.FieldLogger).WithFields(logrus.Fields{
+		"dd.trace_id": span.Context().TraceID(),
+		"dd.span_id":  span.Context().SpanID(),
+	})
 	log.Debug("view user cart")
 	currencies, err := fe.getCurrencies(r.Context())
 	if err != nil {
@@ -275,7 +296,11 @@ func (fe *frontendServer) viewCartHandler(w http.ResponseWriter, r *http.Request
 }
 
 func (fe *frontendServer) placeOrderHandler(w http.ResponseWriter, r *http.Request) {
-	log := r.Context().Value(ctxKeyLog{}).(logrus.FieldLogger)
+	span, _ := tracer.SpanFromContext(r.Context())
+	log := r.Context().Value(ctxKeyLog{}).(logrus.FieldLogger).WithFields(logrus.Fields{
+		"dd.trace_id": span.Context().TraceID(),
+		"dd.span_id":  span.Context().SpanID(),
+	})
 	log.Debug("placing order")
 
 	var (
@@ -345,7 +370,11 @@ func (fe *frontendServer) placeOrderHandler(w http.ResponseWriter, r *http.Reque
 }
 
 func (fe *frontendServer) logoutHandler(w http.ResponseWriter, r *http.Request) {
-	log := r.Context().Value(ctxKeyLog{}).(logrus.FieldLogger)
+	span, _ := tracer.SpanFromContext(r.Context())
+	log := r.Context().Value(ctxKeyLog{}).(logrus.FieldLogger).WithFields(logrus.Fields{
+		"dd.trace_id": span.Context().TraceID(),
+		"dd.span_id":  span.Context().SpanID(),
+	})
 	log.Debug("logging out")
 	for _, c := range r.Cookies() {
 		c.Expires = time.Now().Add(-time.Hour * 24 * 365)
@@ -357,7 +386,11 @@ func (fe *frontendServer) logoutHandler(w http.ResponseWriter, r *http.Request) 
 }
 
 func (fe *frontendServer) setCurrencyHandler(w http.ResponseWriter, r *http.Request) {
-	log := r.Context().Value(ctxKeyLog{}).(logrus.FieldLogger)
+	span, _ := tracer.SpanFromContext(r.Context())
+	log := r.Context().Value(ctxKeyLog{}).(logrus.FieldLogger).WithFields(logrus.Fields{
+		"dd.trace_id": span.Context().TraceID(),
+		"dd.span_id":  span.Context().SpanID(),
+	})
 	cur := r.FormValue("currency_code")
 	log.WithField("curr.new", cur).WithField("curr.old", currentCurrency(r)).
 		Debug("setting currency")

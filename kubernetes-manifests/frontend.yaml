@@ -10,6 +10,8 @@ spec:
     metadata:
       labels:
         app: frontend
+      annotations:
+        ad.datadoghq.com/server.logs: '[{"source":"go","service":"frontend", "sourcecategory":"sourcecode", "file":"file"}]'
     spec:
       containers:
         - name: server
@@ -49,8 +51,18 @@ spec:
             value: "checkoutservice:5050"
           - name: AD_SERVICE_ADDR
             value: "adservice:9555"
-          - name: ENV_PLATFORM
-            value: "gcp"
+          - name: DD_AGENT_HOST
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+          - name: DD_ENV
+            value: "prod"
+          - name: DD_SERVICE
+            value: "checkoutservice"
+          - name: DD_VERSION
+            value: "1.0.0"
+          - name: DD_TRACE_ANALYTICS_ENABLED
+            value: "true"
           resources:
             requests:
               cpu: 100m

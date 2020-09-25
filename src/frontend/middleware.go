@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
 
 type ctxKeyLog struct{}
@@ -41,6 +42,7 @@ func (r *responseRecorder) WriteHeader(statusCode int) {
 
 func (lh *logHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	span, _ := tracer.SpanFromContext(ctx)
 	requestID, _ := uuid.NewRandom()
 	ctx = context.WithValue(ctx, ctxKeyRequestID{}, requestID.String())
 
@@ -50,6 +52,9 @@ func (lh *logHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		"http.req.path":   r.URL.Path,
 		"http.req.method": r.Method,
 		"http.req.id":     requestID.String(),
+	}).WithFields(logrus.Fields{
+		"dd.trace_id": span.Context().TraceID(),
+		"dd.span_id":  span.Context().SpanID(),
 	})
 	if v, ok := r.Context().Value(ctxKeySessionID{}).(string); ok {
 		log = log.WithField("session", v)

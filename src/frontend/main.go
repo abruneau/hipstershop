@@ -7,10 +7,13 @@ import (
 	"os"
 	"time"
 
-	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	grpctrace "gopkg.in/DataDog/dd-trace-go.v1/contrib/google.golang.org/grpc"
+	"gopkg.in/DataDog/dd-trace-go.v1/contrib/gorilla/mux"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
+	"gopkg.in/DataDog/dd-trace-go.v1/profiler"
 )
 
 const (
@@ -21,6 +24,7 @@ const (
 	cookiePrefix    = "shop_"
 	cookieSessionID = cookiePrefix + "session-id"
 	cookieCurrency  = cookiePrefix + "currency"
+	serviceName     = "frontend"
 )
 
 var (
@@ -59,6 +63,8 @@ type frontendServer struct {
 }
 
 func main() {
+	tracer.Start(tracer.WithAnalytics(true))
+	defer tracer.Stop()
 	ctx := context.Background()
 	log := logrus.New()
 	log.Level = logrus.DebugLevel
@@ -71,6 +77,12 @@ func main() {
 		TimestampFormat: time.RFC3339Nano,
 	}
 	log.Out = os.Stdout
+
+	err := profiler.Start()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer profiler.Stop()
 
 	srvPort := port
 	if os.Getenv("PORT") != "" {
@@ -94,7 +106,7 @@ func main() {
 	mustConnGRPC(ctx, &svc.checkoutSvcConn, svc.checkoutSvcAddr)
 	mustConnGRPC(ctx, &svc.adSvcConn, svc.adSvcAddr)
 
-	r := mux.NewRouter()
+	r := mux.NewRouter(mux.WithServiceName("frontend"))
 	r.HandleFunc("/", svc.homeHandler).Methods(http.MethodGet, http.MethodHead)
 	r.HandleFunc("/product/{id}", svc.productHandler).Methods(http.MethodGet, http.MethodHead)
 	r.HandleFunc("/cart", svc.viewCartHandler).Methods(http.MethodGet, http.MethodHead)
@@ -125,9 +137,14 @@ func mustMapEnv(target *string, envKey string) {
 
 func mustConnGRPC(ctx context.Context, conn **grpc.ClientConn, addr string) {
 	var err error
+	si := grpctrace.StreamClientInterceptor(grpctrace.WithServiceName(serviceName))
+	ui := grpctrace.UnaryClientInterceptor(grpctrace.WithServiceName(serviceName))
 	*conn, err = grpc.DialContext(ctx, addr,
 		grpc.WithInsecure(),
-		grpc.WithTimeout(time.Second*3))
+		grpc.WithTimeout(time.Second*3),
+		grpc.WithStreamInterceptor(si),
+		grpc.WithUnaryInterceptor(ui),
+	)
 	if err != nil {
 		panic(errors.Wrapf(err, "grpc: failed to connect %s", addr))
 	}
