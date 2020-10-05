@@ -1,3 +1,4 @@
+const tracer = require('dd-trace').init()
 const path = require('path');
 const grpc = require('grpc');
 const pino = require('pino');
@@ -7,6 +8,7 @@ const charge = require('./charge');
 
 const logger = pino({
   name: 'paymentservice-server',
+  base: null,
   messageKey: 'message',
   changeLevelName: 'severity',
   useLevelLabels: true

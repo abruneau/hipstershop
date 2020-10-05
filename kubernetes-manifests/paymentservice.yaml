@@ -10,6 +10,8 @@ spec:
     metadata:
       labels:
         app: paymentservice
+      annotations:
+        ad.datadoghq.com/server.logs: '[{"source":"nodejs","service":"paymentservice", "sourcecategory":"sourcecode", "file":"file"}]'
     spec:
       terminationGracePeriodSeconds: 5
       containers:
@@ -20,6 +22,24 @@ spec:
         env:
         - name: PORT
           value: "50051"
+        - name: DD_AGENT_HOST
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: DD_ENV
+          value: "prod"
+        - name: DD_SERVICE
+          value: "paymentservice"
+        - name: DD_VERSION
+          value: "1.0.0"
+        - name: DD_TRACE_ENABLED
+          value: "true"
+        - name: DD_LOGS_INJECTION
+          value: "true"
+        - name: DD_TRACE_ANALYTICS_ENABLED
+          value: "true"
+        - name: DD_TRACE_DISABLED_PLUGINS
+          value: "fs"
         readinessProbe:
           exec:
             command: ["/bin/grpc_health_probe", "-addr=:50051"]
