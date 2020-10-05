@@ -3,6 +3,9 @@ package main
 import (
 	"fmt"
 	"math"
+
+	"golang.org/x/net/context"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
 
 // Quote represents a currency value.
@@ -17,12 +20,16 @@ func (q Quote) String() string {
 }
 
 // CreateQuoteFromCount takes a number of items and returns a Price struct.
-func CreateQuoteFromCount(count int) Quote {
-	return CreateQuoteFromFloat(quoteByCountFloat(count))
+func CreateQuoteFromCount(ctx context.Context, count int) Quote {
+	span, ctx := tracer.StartSpanFromContext(ctx, "CreateQuoteFromCount")
+	defer span.Finish()
+	return CreateQuoteFromFloat(ctx, quoteByCountFloat(ctx, count))
 }
 
 // CreateQuoteFromFloat takes a price represented as a float and creates a Price struct.
-func CreateQuoteFromFloat(value float64) Quote {
+func CreateQuoteFromFloat(ctx context.Context, value float64) Quote {
+	span, ctx := tracer.StartSpanFromContext(ctx, "CreateQuoteFromFloat")
+	defer span.Finish()
 	units, fraction := math.Modf(value)
 	return Quote{
 		uint32(units),
@@ -31,7 +38,9 @@ func CreateQuoteFromFloat(value float64) Quote {
 }
 
 // quoteByCountFloat takes a number of items and generates a price quote represented as a float.
-func quoteByCountFloat(count int) float64 {
+func quoteByCountFloat(ctx context.Context, count int) float64 {
+	span, ctx := tracer.StartSpanFromContext(ctx, "quoteByCountFloat")
+	defer span.Finish()
 	if count == 0 {
 		return 0
 	}

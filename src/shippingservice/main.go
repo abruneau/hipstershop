@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"time"
 
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
@@ -14,43 +13,51 @@ import (
 	"google.golang.org/grpc/status"
 
 	pb "github.com/abruneau/hipstershop/src/shippingservice/genproto"
+	"github.com/abruneau/hipstershop/src/shippingservice/logwrapper"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
+	grpctrace "gopkg.in/DataDog/dd-trace-go.v1/contrib/google.golang.org/grpc"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
+	"gopkg.in/DataDog/dd-trace-go.v1/profiler"
 )
 
 const (
 	defaultPort = "50051"
+	serviceName = "shippingservice"
 )
 
-var log *logrus.Logger
+var log *logwrapper.StandardLogger
 
 func init() {
-	log = logrus.New()
+	log = logwrapper.NewLogger()
 	log.Level = logrus.DebugLevel
-	log.Formatter = &logrus.JSONFormatter{
-		FieldMap: logrus.FieldMap{
-			logrus.FieldKeyTime:  "timestamp",
-			logrus.FieldKeyLevel: "severity",
-			logrus.FieldKeyMsg:   "message",
-		},
-		TimestampFormat: time.RFC3339Nano,
-	}
 	log.Out = os.Stdout
 }
 
 func main() {
+	tracer.Start()
+	defer tracer.Stop()
 	port := defaultPort
 	if value, ok := os.LookupEnv("PORT"); ok {
 		port = value
 	}
 	port = fmt.Sprintf(":%s", port)
 
+	err := profiler.Start()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer profiler.Stop()
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
+	// Create the server interceptor using the grpc trace package.
+	si := grpctrace.StreamServerInterceptor(grpctrace.WithServiceName(serviceName))
+	ui := grpctrace.UnaryServerInterceptor(grpctrace.WithServiceName(serviceName))
+
 	var srv *grpc.Server
-	srv = grpc.NewServer()
+	srv = grpc.NewServer(grpc.StreamInterceptor(si), grpc.UnaryInterceptor(ui))
 	svc := &server{}
 	pb.RegisterShippingServiceServer(srv, svc)
 	healthpb.RegisterHealthServer(srv, svc)
@@ -77,8 +84,9 @@ func (s *server) Watch(req *healthpb.HealthCheckRequest, ws healthpb.Health_Watc
 
 // GetQuote produces a shipping quote (cost) in USD.
 func (s *server) GetQuote(ctx context.Context, in *pb.GetQuoteRequest) (*pb.GetQuoteResponse, error) {
-	log.Info("[GetQuote] received request")
-	defer log.Info("[GetQuote] completed request")
+	span, _ := tracer.SpanFromContext(ctx)
+	log.WithSpan(span).Info("[GetQuote] received request")
+	defer log.WithSpan(span).Info("[GetQuote] completed request")
 
 	// 1. Our quote system requires the total number of items to be shipped.
 	count := 0
@@ -87,7 +95,7 @@ func (s *server) GetQuote(ctx context.Context, in *pb.GetQuoteRequest) (*pb.GetQ
 	}
 
 	// 2. Generate a quote based on the total number of items to be shipped.
-	quote := CreateQuoteFromCount(count)
+	quote := CreateQuoteFromCount(ctx, count)
 
 	// 3. Generate a response.
 	return &pb.GetQuoteResponse{
@@ -102,11 +110,12 @@ func (s *server) GetQuote(ctx context.Context, in *pb.GetQuoteRequest) (*pb.GetQ
 // ShipOrder mocks that the requested items will be shipped.
 // It supplies a tracking ID for notional lookup of shipment delivery status.
 func (s *server) ShipOrder(ctx context.Context, in *pb.ShipOrderRequest) (*pb.ShipOrderResponse, error) {
-	log.Info("[ShipOrder] received request")
-	defer log.Info("[ShipOrder] completed request")
+	span, _ := tracer.SpanFromContext(ctx)
+	log.WithSpan(span).Info("[ShipOrder] received request")
+	defer log.WithSpan(span).Info("[ShipOrder] completed request")
 	// 1. Create a Tracking ID
 	baseAddress := fmt.Sprintf("%s, %s, %s", in.Address.StreetAddress, in.Address.City, in.Address.State)
-	id := CreateTrackingID(baseAddress)
+	id := CreateTrackingID(ctx, baseAddress)
 
 	// 2. Generate a response.
 	return &pb.ShipOrderResponse{
