@@ -9,36 +9,36 @@ import (
 	"time"
 
 	pb "github.com/abruneau/hipstershop/src/productcatalogservice/genproto"
+	"github.com/abruneau/hipstershop/src/productcatalogservice/logwrapper"
 	"github.com/abruneau/hipstershop/src/productcatalogservice/store"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
+	"gopkg.in/DataDog/dd-trace-go.v1/profiler"
 
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	grpctrace "gopkg.in/DataDog/dd-trace-go.v1/contrib/google.golang.org/grpc"
 )
 
 var (
-	log          *logrus.Logger
+	log          *logwrapper.StandardLogger
 	extraLatency time.Duration
+	serviceName  = "productcatalogservice"
 
 	port = "3550"
 )
 
 func init() {
-	log = logrus.New()
-	log.Formatter = &logrus.JSONFormatter{
-		FieldMap: logrus.FieldMap{
-			logrus.FieldKeyTime:  "timestamp",
-			logrus.FieldKeyLevel: "severity",
-			logrus.FieldKeyMsg:   "message",
-		},
-		TimestampFormat: time.RFC3339Nano,
-	}
+	log = logwrapper.NewLogger()
+	log.Level = logrus.InfoLevel
 	log.Out = os.Stdout
 }
 
 func main() {
+	tracer.Start()
+	defer tracer.Stop()
 	flag.Parse()
 
 	// set injected latency
@@ -53,15 +53,22 @@ func main() {
 		extraLatency = time.Duration(0)
 	}
 
+	err := profiler.Start()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer profiler.Stop()
+
 	catalog, err := store.NewMogoStore(log)
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(1)
 	}
 
-	defer catalog.Disconnect()
+	ctx := context.Background()
+	defer catalog.Disconnect(ctx)
 
-	if err = catalog.LoadCatalog(); err != nil {
+	if err = catalog.LoadCatalog(ctx); err != nil {
 		log.Fatal(err)
 		os.Exit(1)
 	}
@@ -79,8 +86,13 @@ func run(port string, catalog store.Store) string {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// Create the server interceptor using the grpc trace package.
+	si := grpctrace.StreamServerInterceptor(grpctrace.WithServiceName(serviceName))
+	ui := grpctrace.UnaryServerInterceptor(grpctrace.WithServiceName(serviceName))
+
 	var srv *grpc.Server
-	srv = grpc.NewServer()
+	srv = grpc.NewServer(grpc.StreamInterceptor(si), grpc.UnaryInterceptor(ui))
 
 	svc := &productCatalog{
 		catalog: catalog,
@@ -104,16 +116,16 @@ func (p *productCatalog) Watch(req *healthpb.HealthCheckRequest, ws healthpb.Hea
 	return status.Errorf(codes.Unimplemented, "health check via Watch not implemented")
 }
 
-func (p *productCatalog) ListProducts(context.Context, *pb.Empty) (*pb.ListProductsResponse, error) {
+func (p *productCatalog) ListProducts(ctx context.Context, _ *pb.Empty) (*pb.ListProductsResponse, error) {
 	time.Sleep(extraLatency)
-	products, err := p.catalog.List()
+	products, err := p.catalog.List(ctx)
 	return &pb.ListProductsResponse{Products: products}, err
 }
 
 func (p *productCatalog) GetProduct(ctx context.Context, req *pb.GetProductRequest) (*pb.Product, error) {
 	time.Sleep(extraLatency)
 
-	found, err := p.catalog.Get(req.Id)
+	found, err := p.catalog.Get(ctx, req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -126,6 +138,6 @@ func (p *productCatalog) GetProduct(ctx context.Context, req *pb.GetProductReque
 func (p *productCatalog) SearchProducts(ctx context.Context, req *pb.SearchProductsRequest) (*pb.SearchProductsResponse, error) {
 	time.Sleep(extraLatency)
 
-	products, err := p.catalog.Find(req.Query)
+	products, err := p.catalog.Find(ctx, req.Query)
 	return &pb.SearchProductsResponse{Results: products}, err
 }

@@ -10,6 +10,8 @@ spec:
     metadata:
       labels:
         app: productcatalogservice
+      annotations:
+        ad.datadoghq.com/server.logs: '[{"source":"go","service":"productcatalogservice", "sourcecategory":"sourcecode", "file":"file"}]'
     spec:
       terminationGracePeriodSeconds: 5
       containers:
@@ -22,6 +24,16 @@ spec:
           value: "3550"
         - name: MONGO_URL
           value: mongodb://mongo:27017/dev
+        - name: DD_AGENT_HOST
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: DD_ENV
+          value: "prod"
+        - name: DD_SERVICE
+          value: "productcatalogservice"
+        - name: DD_VERSION
+          value: "1.0.0"
         readinessProbe:
           exec:
             command: ["/bin/grpc_health_probe", "-addr=:3550"]
