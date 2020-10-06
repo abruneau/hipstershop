@@ -30,5 +30,7 @@ COPY --from=builder /usr/local/lib/python3.7/ /usr/local/lib/python3.7/
 # Add the application
 COPY . .
 
+RUN pip install ddtrace
+
 EXPOSE 8080
-ENTRYPOINT [ "python", "email_server.py" ]
+ENTRYPOINT [ "/usr/local/bin/ddtrace-run", "python", "email_server.py" ]
