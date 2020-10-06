@@ -18,8 +18,10 @@ RUN pip install -r requirements.txt
 # add files into working directory
 COPY . .
 
+RUN pip install ddtrace
+
 # set listen port
 ENV PORT "8080"
 EXPOSE 8080
 
-ENTRYPOINT ["python", "/recommendationservice/recommendation_server.py"]
+ENTRYPOINT ["/usr/local/bin/ddtrace-run", "python", "/recommendationservice/recommendation_server.py"]
