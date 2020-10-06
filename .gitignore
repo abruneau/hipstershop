@@ -11,3 +11,4 @@ pkg/
 .kubernetes-manifests-*/
 .project
 .eclipse.buildship.core.prefs
+kubernetes-manifests/secrets.yaml
