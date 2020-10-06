@@ -65,7 +65,7 @@ spec:
                 - sh
                 - -c
                 # sleep is for Azure
-                - "sleep 30; mongo --eval 'db = db.getSiblingDB(\"admin\"); db.createUser({ \"user\": \"datadog\", \"pwd\": \"ddpass\", \"roles\": [{role: \"read\", db: \"admin\"},{role: \"clusterMonitor\", db: \"admin\"},{role: \"read\", db: \"local\"}, {role: \"read\", db: \"store\"}]});'"
+                - "sleep 30; mongo --eval 'db = db.getSiblingDB(\"admin\"); db.dropUser(\"datadog\"); db.createUser({ \"user\": \"datadog\", \"pwd\": \"ddpass\", \"roles\": [{role: \"read\", db: \"admin\"},{role: \"clusterMonitor\", db: \"admin\"},{role: \"read\", db: \"local\"}, {role: \"read\", db: \"store\"}]});'"
           readinessProbe:
             exec:
               command:
