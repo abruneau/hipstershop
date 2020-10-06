@@ -12,7 +12,7 @@ spec:
         app: adservice
         tags.datadoghq.com/env: "prod"
         tags.datadoghq.com/service: "adservice"
-        tags.datadoghq.com/version: "1.0"
+        tags.datadoghq.com/version: "1.0.0"
       annotations:
         ad.datadoghq.com/server.logs: '[{"source":"java","service":"adservice", "sourcecategory":"sourcecode"}]'
     spec:
@@ -48,12 +48,12 @@ spec:
         - name: DD_TRACE_ANALYTICS_ENABLED
           value: "true"
         resources:
-          requests:
-            cpu: 200m
-            memory: 180Mi
-          limits:
-            cpu: 300m
-            memory: 300Mi
+          # requests:
+          #   cpu: 200m
+          #   memory: 180Mi
+          # limits:
+          #   cpu: 300m
+          #   memory: 300Mi
         readinessProbe:
           initialDelaySeconds: 20
           periodSeconds: 15
