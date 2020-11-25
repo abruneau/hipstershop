@@ -394,7 +394,7 @@ datadog:
     ## This requires processAgent.enabled and clusterAgent.enabled to be set to true
     ## ref: TODO - add doc link
     #
-    enabled: false
+    enabled: true
 
     ## @param container_scrubbing - boolean - required
     ## Enable the scrubbing of containers in the kubernetes resource YAML for sensitive information.
@@ -413,7 +413,7 @@ datadog:
       ## @param enabled - boolean - required
       ## Set this to true to enable compliance checks
       #
-      enabled: false
+      enabled: true
       # @param configMap - string - optional - contains compliance benchmarks that will be used
       #
       configMap:
@@ -426,7 +426,7 @@ datadog:
       ## @param enabled - boolean - optional - default: false
       ## Set to true to enable the Security Runtime Module.
       #
-      enabled: false
+      enabled: true
 
       ## @param policies - object - required
       ## Policy files
@@ -442,7 +442,7 @@ datadog:
         ## @param enabled - boolean - optional - default: false
         ## Set to true to enable the Syscall monitoring.
         #
-        enabled: false
+        enabled: true
 
 ## @param clusterAgent - object - required
 ## This is the Datadog Cluster Agent implementation that handles cluster-wide
@@ -468,7 +468,7 @@ clusterAgent:
     ## @param tag - string - required
     ## Define the Cluster-Agent version to use.
     #
-    tag: 1.7.0
+    tag: latest
 
     ## @param pullPolicy - string - required
     ## The Kubernetes pull policy.
@@ -737,7 +737,7 @@ agents:
     ## Define the Agent version to use.
     ## Use 7-jmx to enable jmx fetch collection
     #
-    tag: 7.21.1
+    tag: latest
 
     ## @param doNotCheckTag - boolean - optional
     ## By default, the version passed in agents.image.tag is checked

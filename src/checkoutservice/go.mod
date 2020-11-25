@@ -18,6 +18,6 @@ require (
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e // indirect
 	google.golang.org/genproto v0.0.0-20200610104632-a5b850bcf112 // indirect
 	google.golang.org/grpc v1.29.1
-	gopkg.in/DataDog/dd-trace-go.v1 v1.26.0
+	gopkg.in/DataDog/dd-trace-go.v1 v1.27.1
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 )
