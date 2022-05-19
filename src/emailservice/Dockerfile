@@ -2,20 +2,11 @@ FROM python:3.7 as base
 
 FROM base as builder
 
-RUN apt-get -qq update \
-    && apt-get install -y --no-install-recommends \
-        g++ \
-    && rm -rf /var/lib/apt/lists/*
-
 # get packages
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
 FROM base as final
-
-RUN apt-get -qq update \
-    && apt-get install -y --no-install-recommends \
-        wget
 
 # Download the grpc health probe
 RUN GRPC_HEALTH_PROBE_VERSION=v0.2.0 && \

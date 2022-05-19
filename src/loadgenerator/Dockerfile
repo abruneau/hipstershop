@@ -1,14 +1,3 @@
-FROM python:3-slim
-
-RUN apt-get -qq update \
-    && apt-get install -y --no-install-recommends \
-        g++ curl
-
-COPY requirements.txt .
-
-RUN mkdir /install
-RUN pip install -r requirements.txt
-
-COPY . .
-RUN chmod +x ./loadgen.sh
-ENTRYPOINT ./loadgen.sh
+FROM locustio/locust
+COPY ./locustfile.py /tmp/locustfile.py
+CMD [ "--host", "http://frontend:80", "-f", "/tmp/locustfile.py", "--headless" ]
