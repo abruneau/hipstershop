@@ -44,11 +44,9 @@ spec:
           readinessProbe:
             exec:
               command:
-              - sh
-              - -c
-              # @ckelner: might have to do this as a hack for Azure... maybe not
-              # see above lifecycle comment
-              - "mongo --eval 'rs.status()'"
+              - "bin/bash"
+              - "-c"
+              - "mongosh --eval 'db.stats()'"
             initialDelaySeconds: 10
             failureThreshold: 3
             successThreshold: 1
@@ -57,9 +55,9 @@ spec:
           livenessProbe:
             exec:
               command:
-              - sh
-              - -c
-              - "mongo --eval 'rs.status()'"
+              - "bin/bash"
+              - "-c"
+              - "mongosh --eval 'db.stats()'"
             initialDelaySeconds: 60
             failureThreshold: 3
             successThreshold: 1
